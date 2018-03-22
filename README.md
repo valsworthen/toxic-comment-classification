@@ -1,5 +1,5 @@
 # How to run  
-## Required
+## Requirements
 Make sure you have Tensorflow **1.5** installed on GPU.  
 
 The script saves a lot of files (OOF, predictions, models) in the following folders:  
@@ -9,7 +9,7 @@ The script saves a lot of files (OOF, predictions, models) in the following fold
 
 Input data should be inside `input/` folder.  
 
-**Make sure to replace the** `embedding` **dictionnary in**`train_nn.py` **with your paths to pre-trained embeddings** (see below if you're not familiar with pre-trained embeddings)  
+**Make sure to replace the** `embedding` **dictionnary in**`train_nn.py` **with your paths to pre-trained embeddings** ([see below](#Embeddings) if you're not familiar with pre-trained embeddings)  
 
 ## Instructions  
 ### Run with best configs  
