@@ -2,9 +2,8 @@ import pandas as pd
 import numpy as np
 from keras.models import load_model
 from sklearn.metrics import roc_auc_score, log_loss
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-from utils import RocAucEvaluation,DisplayLR, format_time, create_submission, average_predictions, geom_average_predictions
-from sklearn.model_selection import StratifiedKFold, KFold, train_test_split
+from utils import format_time, create_submission, average_predictions, geom_average_predictions
+from sklearn.model_selection import KFold, train_test_split
 import time
 from models import instantiate_model
 import preprocessing
@@ -12,9 +11,9 @@ import running
 
 SEED = 2610
 np.random.seed(SEED)
-
 labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
-#PARAMETERS
+
+"""PARAMETERS"""
 EMBEDDING_FILE = 'fasttext'
 EMBEDDING_DIMENSION = 300
 #whether to use the data preprocessed by Zafar: https://www.kaggle.com/fizzbuzz/cleaned-toxic-comments
@@ -23,18 +22,20 @@ use_preprocessed = True
 MAX_NB_WORDS = 50000
 MAX_SEQUENCE_LENGTH = 200
 
-run_90p = True
-run_kfold = False
-n_splits = 10
+run_90p = True #fit model on 90% of the data
+run_kfold = False #perform kfold cross validation
+n_folds = 10
 
+#parameters used in model fitting
 TRAINING_PARAMS = {
                     'batch_size':128,
                     'nb_epochs':50,
-                    'patience':2,
+                    'patience':1,
                     'min_delta':0,
                     'monitored_value':'val_loss',
                     'weight_decay':1e-4,
                     }
+#parameters to create the Keras model
 MODEL_PARAMS = {
                     'optimizer':'nadam',
                     'lr':0.002,
@@ -46,7 +47,7 @@ MODEL_PARAMS = {
                     'use_attention':1,
                     'use_maxpool':1,
                     'use_avgpool':1,
-                    'use_dense':1,
+                    'use_dense':0,
                     'dense_size':50,
                     'dr':0.2,
                 }
@@ -56,7 +57,7 @@ MODEL_TYPE = input('Enter model type: ')
 
 print('Loading and preprocessing data')
 df, df_test = preprocessing.load_data(EMBEDDING_FILE, use_preprocessed)
-"""This should be replaced by your path to embedding files"""
+"""This should be replaced with your path to embedding files"""
 embeddings = {
                 'twitter':'/home/valentin/glove.twitter.27B.200d.txt',
                 'fasttext':'/home/valentin/crawl-300d-2M.vec',
@@ -64,7 +65,8 @@ embeddings = {
                 'sample':'/home/valentin/sample_fasttext.vec'
             }
 EMBEDDING_FILE = embeddings[EMBEDDING_FILE]
-#classic NLP preprocessing for Keras
+
+"""Classic NLP preprocessing for Keras"""
 pp = preprocessing.Preprocessor(df, df_test, 'comment_text', MAX_NB_WORDS, MAX_SEQUENCE_LENGTH)
 df, df_test = pp.fill_null(df, df_test)
 y_train = df[labels].values
@@ -81,8 +83,7 @@ embedding_matrix = pp.make_words_vec(EMBEDDING_FILE, EMBEDDING_DIMENSION)
 end_matrix = format_time(time.time() - begin_matrix)
 print('Matrix created - shape: {} - time: {}'.format(embedding_matrix.shape, end_matrix))
 
-# Run cross validation on the model
-"""Test sur 90 pourcents du dataset"""
+"""Fit on 90% of the dataset"""
 if run_90p:
 
     begin_cv = time.time()
@@ -105,16 +106,16 @@ if run_90p:
     preds_ = model.predict(x_test, batch_size = 2*TRAINING_PARAMS['batch_size'], verbose = 1)
     create_submission(preds_, '{}_cv_{}-ave_{:0.5f}.csv'.format(MODEL_TYPE, FILENAME, auc))
 
-"""K fold CV"""
+"""Perform K fold CV"""
 if run_kfold:
-    kf = KFold(n_splits=n_splits, shuffle=True, random_state=SEED)
+    kf = KFold(n_splits=n_folds, shuffle=True, random_state=SEED)
     cv_scores = []
     cv_losses = []
     cv_predictions = []
     oof_predictions = np.zeros((len(x_train), len(labels)))
 
     begin_cv = time.time()
-    print('Proceeding to Kfold cross validation...')
+    print('Performing Kfold cross validation...')
     for i, (train, valid) in enumerate(kf.split(x_train)):
         print('Starting fold {:d}...'.format(i+1))
         begin_fold = time.time()
@@ -123,14 +124,7 @@ if run_kfold:
         if i == 0:
             print(model.summary())
 
-        ra_val = RocAucEvaluation(validation_data=(x_train[valid], y_train[valid]))
-        checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, save_weights_only = True)
-        es = EarlyStopping(monitor='val_loss', patience=TRAINING_PARAMS['patience'], mode='auto', verbose=1)
-
-        hist = model.fit(x_train[train], y_train[train], epochs = TRAINING_PARAMS['nb_epochs'], batch_size= TRAINING_PARAMS['batch_size'],
-                        callbacks = [ra_val, checkpoint, es], validation_data = (x_train[valid], y_train[valid]))
-        hist = hist.history
-        stopped_epoch = es.stopped_epoch
+        hist, stopped_epoch = running.fitting_model(model, x_train[train], y_train[train], x_train[valid], y_train[valid], TRAINING_PARAMS, filepath)
 
         end_fold = format_time(time.time() - begin_fold)
 
@@ -138,13 +132,12 @@ if run_kfold:
         cv_losses.append(hist['val_loss'][stopped_epoch-TRAINING_PARAMS['patience']])
         print('--- Fold AUC {:.5f} - Stopped epoch: {:d} - time: {}'.format(cv_scores[i], stopped_epoch-TRAINING_PARAMS['patience']+1, end_fold))
         print('--- Fold loss {:.5f}'.format(cv_losses[i]))
-        #save predictions on the validation set == OUT OF FOLD PREDICTIONS
+        #load the best model to generate OOF predictions and test predictions
         model.load_weights(filepath)
         print('Saving OOF predictions...')
         oof_predictions[valid, :] = model.predict(x_train[valid], batch_size = 2*TRAINING_PARAMS['batch_size'], verbose = 1)
         pd.DataFrame(oof_predictions).to_csv('temporary_oof_preds/temp_oof_preds_'+FILENAME+'.csv',index=False)
 
-        #save predictions on the test set from the BEST model
         print('Generating test predictions from the best model...')
         preds_ = model.predict(x_test, batch_size = 2*TRAINING_PARAMS['batch_size'], verbose = 1)
         cv_predictions.append(preds_)
@@ -163,10 +156,10 @@ if run_kfold:
 
     """Compute n-folds average test predictions"""
     print('Saving predictions...')
-    preds = average_predictions(cv_predictions, n_splits)
+    preds = average_predictions(cv_predictions, n_folds)
     create_submission(preds, '{}_cv_{}.csv'.format(MODEL_TYPE, FILENAME))
 
     #"""Geometric mean"""
     #print('Geometric')
-    #preds2 = geom_average_predictions(cv_predictions, n_splits)
+    #preds2 = geom_average_predictions(cv_predictions, n_folds)
     #create_submission(preds2, '{}_cvgeom_{}.csv'.format(MODEL_TYPE, FILENAME))
