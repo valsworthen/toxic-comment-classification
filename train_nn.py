@@ -10,12 +10,24 @@ from models import instantiate_model
 import preprocessing
 import running
 
+import sys
+
 SEED = 2610
 np.random.seed(SEED)
 labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
 
 print('Parsing parameters')
-config = read_yaml('parameters.yaml')
+if len(sys.argv) > 1:
+    model_name = sys.argv[1]
+    try:
+        config = read_yaml('best_configs/{}.yaml'.format(model_name))
+        print('Best parameters for {} loaded'.format(model_name))
+    except FileNotFoundError:
+        print('Wrong model type!')
+        sys.exit(1)
+else:
+    config = read_yaml('parameters.yaml')
+
 FILENAME = config.FILENAME
 MODEL_TYPE = config.MODEL_TYPE
 TRAINING_PARAMS = config.training_parameters

@@ -1,6 +1,8 @@
-FILENAME:
-MODEL_TYPE:
-#should be one of the models implemented in models.py
+FILENAME: default_name
+MODEL_TYPE: pooled_gru
+#should be one of the models implemented in models.py:
+#bibigru / pooled_gru / ngram_cnn / cnn_gru / gru_cnn
+
 run_90p: True #fit model on 90% of the data
 run_kfold: False #perform kfold cross validation
 n_folds: 10
