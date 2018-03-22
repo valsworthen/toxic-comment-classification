@@ -1,12 +1,14 @@
+#this model scored 0.9849 in Public LB
+
 FILENAME:
-MODEL_TYPE:
+MODEL_TYPE: ngram_cnn
 #should be one of the models implemented in models.py
-run_90p: True #fit model on 90% of the data
-run_kfold: False #perform kfold cross validation
+run_90p: False #fit model on 90% of the data
+run_kfold: True #perform kfold cross validation
 n_folds: 10
 
 preprocessing_parameters:
-  embedding_file: 'sample'
+  embedding_file: 'fasttext'
   embedding_dimension: 300
   #whether to use the data preprocessed by Zafar: https://www.kaggle.com/fizzbuzz/cleaned-toxic-comments
   use_preprocessed_data: True
@@ -19,7 +21,7 @@ training_parameters:
 
   batch_size: 128
   nb_epochs: 50
-  patience: 1
+  patience: 2
   min_delta: 0
   monitored_value: 'val_loss'
   weight_decay: 1e-4
@@ -29,12 +31,17 @@ model_parameters:
   optimizer: 'nadam'
   lr: 0.002
   decay: 0.004
+
   gru_units: 100
+
   num_filters: 64
   ngram_range: !!python/tuple [2,5]
+
   use_attention: 1
   use_maxpool: 1
   use_avgpool: 1
-  use_dense: 0
+
+  use_dense: 1
   dense_size: 50
+
   dr: 0.2

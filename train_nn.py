@@ -55,7 +55,7 @@ end_matrix = format_time(time.time() - begin_matrix)
 print('Matrix created - shape: {} - time: {}'.format(embedding_matrix.shape, end_matrix))
 
 """Fit on 90% of the dataset"""
-if TRAINING_PARAMS.run_90p:
+if config.run_90p:
 
     begin_cv = time.time()
     model = instantiate_model(MODEL_TYPE, MODEL_PARAMS, max_sequence_length, max_nb_words, embedding_dimension, embedding_matrix)
@@ -78,8 +78,8 @@ if TRAINING_PARAMS.run_90p:
     create_submission(preds_, '{}_cv_{}-ave_{:0.5f}.csv'.format(MODEL_TYPE, FILENAME, auc))
 
 """Perform K fold CV"""
-if TRAINING_PARAMS.run_kfold:
-    kf = KFold(n_splits=TRAINING_PARAMS.n_folds, shuffle=True, random_state=SEED)
+if config.run_kfold:
+    kf = KFold(n_splits=config.n_folds, shuffle=True, random_state=SEED)
     cv_scores = []
     cv_losses = []
     cv_predictions = []
@@ -126,10 +126,10 @@ if TRAINING_PARAMS.run_kfold:
 
     """Compute n-folds average test predictions"""
     print('Saving predictions...')
-    preds = average_predictions(cv_predictions, TRAINING_PARAMS.n_folds)
+    preds = average_predictions(cv_predictions, config.n_folds)
     create_submission(preds, '{}_cv_{}.csv'.format(MODEL_TYPE, FILENAME))
 
     #"""Geometric mean"""
     #print('Geometric')
-    #preds2 = geom_average_predictions(cv_predictions, TRAINING_PARAMS.n_folds)
+    #preds2 = geom_average_predictions(cv_predictions, config.n_folds)
     #create_submission(preds2, '{}_cvgeom_{}.csv'.format(MODEL_TYPE, FILENAME))
