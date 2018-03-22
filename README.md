@@ -11,8 +11,8 @@ Input data should be inside `input/` folder.
 
 **Make sure to replace the** `embedding` **dictionnary in**`train_nn.py` **with your paths to pre-trained embeddings** (see below if you're not familiar with pre-trained embeddings)  
 
-The *main* file is `train_nn.py`.  
-When run, this file asks for a **model type**. This corresponds to models implemented in `models.py`. At the moment, models implemented are:  
+The *main* file is `train_nn.py` and can be run directly via command line after having specified the parameters in `parameters.yaml`.  
+In this last file, the `MODEL_TYPE` field corresponds to models implemented in `models.py`. At the moment, models implemented are:  
 - bibigru  
 - pooled_gru  
 - ngram_cnn  
@@ -23,9 +23,11 @@ Feel free to complete `models.py` with your own architecture!
 
 ##Models  
 
-TBD: list the different models I used during the competitions
+TBD: list the different models I used during the competitions  
 
-## Embeddings  
+The best parameters for the implemented models can be found in `best_configs/`  
+
+##Embeddings  
 
 Word embeddings are used in NLP to compute *vector representation* of words that can be fed to machine learning models. Such representations can be extracted from statistics of the corpus but it is now common to *learn* them via a "fake task". You can check [this great explanation of Word2Vec](http://mccormickml.com/2016/04/19/word2vec-tutorial-the-skip-gram-model/), one of the most famous algorithm to learn word embeddings.  
 
