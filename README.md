@@ -9,7 +9,7 @@ The script saves a lot of files (OOF, predictions, models) in the following fold
 
 Input data should be inside `input/` folder.  
 
-**Make sure to replace the** `embedding` **dictionnary in**`train_nn.py` **with your paths to pre-trained embeddings** ([see below](#Embeddings) if you're not familiar with pre-trained embeddings)  
+**Make sure to replace the** `embedding` **dictionnary in**`train_nn.py` **with your paths to pre-trained embeddings** ([see below](#embeddings) if you're not familiar with pre-trained embeddings)  
 
 ## Instructions  
 ### Run with best configs  
