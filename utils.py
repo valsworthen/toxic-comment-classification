@@ -1,6 +1,9 @@
 """Utilities"""
 import pandas as pd
 import numpy as np
+from attrdict import AttrDict
+import yaml
+
 def average_predictions(cv_predictions, n_splits, num_samples = 153164, num_labels = 6):
     """Average k-fold predictions stored in a dict"""
     preds = np.zeros((num_samples, num_labels))
@@ -28,3 +31,8 @@ def format_time(sec):
     m, s = divmod(sec, 60)
     h, m = divmod(m, 60)
     return "{:.0f}h {:.0f}min {:.0f}s".format(h, m, s)
+
+def read_yaml(filepath):
+    with open(filepath) as f:
+        config = yaml.load(f)
+    return AttrDict(config)

@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 from keras.models import load_model
 from sklearn.metrics import roc_auc_score, log_loss
-from utils import format_time, create_submission, average_predictions, geom_average_predictions
+from utils import format_time, create_submission, average_predictions, \
+        geom_average_predictions, read_yaml
 from sklearn.model_selection import KFold, train_test_split
 import time
 from models import instantiate_model
@@ -13,50 +14,20 @@ SEED = 2610
 np.random.seed(SEED)
 labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
 
-"""PARAMETERS"""
-EMBEDDING_FILE = 'fasttext'
-EMBEDDING_DIMENSION = 300
-#whether to use the data preprocessed by Zafar: https://www.kaggle.com/fizzbuzz/cleaned-toxic-comments
-use_preprocessed = True
+print('Parsing parameters')
+config = read_yaml('parameters.yaml')
+FILENAME = config.FILENAME
+MODEL_TYPE = config.MODEL_TYPE
+TRAINING_PARAMS = config.training_parameters
+MODEL_PARAMS = config.model_parameters
+PREPROCESSING_PARAMS = config.preprocessing_parameters
 
-MAX_NB_WORDS = 50000
-MAX_SEQUENCE_LENGTH = 200
-
-run_90p = True #fit model on 90% of the data
-run_kfold = False #perform kfold cross validation
-n_folds = 10
-
-#parameters used in model fitting
-TRAINING_PARAMS = {
-                    'batch_size':128,
-                    'nb_epochs':50,
-                    'patience':1,
-                    'min_delta':0,
-                    'monitored_value':'val_loss',
-                    'weight_decay':1e-4,
-                    }
-#parameters to create the Keras model
-MODEL_PARAMS = {
-                    'optimizer':'nadam',
-                    'lr':0.002,
-                    'decay':0.004,
-
-                    'gru_units':100,
-                    'num_filters':64,
-                    'ngram_range':(2,5),
-                    'use_attention':1,
-                    'use_maxpool':1,
-                    'use_avgpool':1,
-                    'use_dense':0,
-                    'dense_size':50,
-                    'dr':0.2,
-                }
-
-FILENAME = input('Enter submission name: ')
-MODEL_TYPE = input('Enter model type: ')
+max_sequence_length = PREPROCESSING_PARAMS.max_sequence_length
+max_nb_words = PREPROCESSING_PARAMS.max_nb_words
+embedding_dimension = PREPROCESSING_PARAMS.embedding_dimension
 
 print('Loading and preprocessing data')
-df, df_test = preprocessing.load_data(EMBEDDING_FILE, use_preprocessed)
+df, df_test = preprocessing.load_data(PREPROCESSING_PARAMS)
 """This should be replaced with your path to embedding files"""
 embeddings = {
                 'twitter':'/home/valentin/glove.twitter.27B.200d.txt',
@@ -64,10 +35,10 @@ embeddings = {
                 'glove':'/home/valentin/glove.840B.300d.txt',
                 'sample':'/home/valentin/sample_fasttext.vec'
             }
-EMBEDDING_FILE = embeddings[EMBEDDING_FILE]
+embedding_file = embeddings[PREPROCESSING_PARAMS.embedding_file]
 
 """Classic NLP preprocessing for Keras"""
-pp = preprocessing.Preprocessor(df, df_test, 'comment_text', MAX_NB_WORDS, MAX_SEQUENCE_LENGTH)
+pp = preprocessing.Preprocessor(df, df_test, 'comment_text', PREPROCESSING_PARAMS)
 df, df_test = pp.fill_null(df, df_test)
 y_train = df[labels].values
 
@@ -79,15 +50,15 @@ print('Shape of test tensor ', x_test.shape)
 #Pre-trained embeddings
 print('Creating embedding matrix...')
 begin_matrix = time.time()
-embedding_matrix = pp.make_words_vec(EMBEDDING_FILE, EMBEDDING_DIMENSION)
+embedding_matrix = pp.make_words_vec(embedding_file)
 end_matrix = format_time(time.time() - begin_matrix)
 print('Matrix created - shape: {} - time: {}'.format(embedding_matrix.shape, end_matrix))
 
 """Fit on 90% of the dataset"""
-if run_90p:
+if TRAINING_PARAMS.run_90p:
 
     begin_cv = time.time()
-    model = instantiate_model(MODEL_TYPE, MODEL_PARAMS, MAX_SEQUENCE_LENGTH, MAX_NB_WORDS, EMBEDDING_DIMENSION, embedding_matrix)
+    model = instantiate_model(MODEL_TYPE, MODEL_PARAMS, max_sequence_length, max_nb_words, embedding_dimension, embedding_matrix)
     print(model.summary())
 
     X_train, X_valid, Y_train, Y_valid = train_test_split(x_train, y_train, test_size = 0.1, random_state = SEED)
@@ -97,18 +68,18 @@ if run_90p:
     end_cv = format_time(time.time() - begin_cv)
 
     print('Training complete - {} - time: {}'.format(FILENAME, end_cv))
-    auc = hist['roc_auc_val'][stopped_epoch-TRAINING_PARAMS['patience']]
-    loss = hist['val_loss'][stopped_epoch-TRAINING_PARAMS['patience']]
+    auc = hist['roc_auc_val'][stopped_epoch-TRAINING_PARAMS.patience]
+    loss = hist['val_loss'][stopped_epoch-TRAINING_PARAMS.patience]
     print('AUC:', round(auc,5), ' / Loss:', round(loss,5))
 
     print('Generating predictions from the best model...')
     model.load_weights(filepath)
-    preds_ = model.predict(x_test, batch_size = 2*TRAINING_PARAMS['batch_size'], verbose = 1)
+    preds_ = model.predict(x_test, batch_size = 2*TRAINING_PARAMS.batch_size, verbose = 1)
     create_submission(preds_, '{}_cv_{}-ave_{:0.5f}.csv'.format(MODEL_TYPE, FILENAME, auc))
 
 """Perform K fold CV"""
-if run_kfold:
-    kf = KFold(n_splits=n_folds, shuffle=True, random_state=SEED)
+if TRAINING_PARAMS.run_kfold:
+    kf = KFold(n_splits=TRAINING_PARAMS.n_folds, shuffle=True, random_state=SEED)
     cv_scores = []
     cv_losses = []
     cv_predictions = []
@@ -117,29 +88,28 @@ if run_kfold:
     begin_cv = time.time()
     print('Performing Kfold cross validation...')
     for i, (train, valid) in enumerate(kf.split(x_train)):
-        print('Starting fold {:d}...'.format(i+1))
         begin_fold = time.time()
-        model = instantiate_model(MODEL_TYPE, MODEL_PARAMS, MAX_SEQUENCE_LENGTH, MAX_NB_WORDS, EMBEDDING_DIMENSION, embedding_matrix)
+        model = instantiate_model(MODEL_TYPE, MODEL_PARAMS, max_sequence_length, max_nb_words, embedding_dimension, embedding_matrix)
         filepath = 'temporary_cv_models/model-{}.fold-{:d}-autocheckpoint.h5'.format(FILENAME, i+1)
         if i == 0:
             print(model.summary())
-
+        print('Starting fold {:d}...'.format(i+1))
         hist, stopped_epoch = running.fitting_model(model, x_train[train], y_train[train], x_train[valid], y_train[valid], TRAINING_PARAMS, filepath)
 
         end_fold = format_time(time.time() - begin_fold)
 
-        cv_scores.append(hist['roc_auc_val'][stopped_epoch-TRAINING_PARAMS['patience']])
-        cv_losses.append(hist['val_loss'][stopped_epoch-TRAINING_PARAMS['patience']])
+        cv_scores.append(hist['roc_auc_val'][stopped_epoch-TRAINING_PARAMS.patience])
+        cv_losses.append(hist['val_loss'][stopped_epoch-TRAINING_PARAMS.patience])
         print('--- Fold AUC {:.5f} - Stopped epoch: {:d} - time: {}'.format(cv_scores[i], stopped_epoch-TRAINING_PARAMS['patience']+1, end_fold))
         print('--- Fold loss {:.5f}'.format(cv_losses[i]))
         #load the best model to generate OOF predictions and test predictions
         model.load_weights(filepath)
         print('Saving OOF predictions...')
-        oof_predictions[valid, :] = model.predict(x_train[valid], batch_size = 2*TRAINING_PARAMS['batch_size'], verbose = 1)
+        oof_predictions[valid, :] = model.predict(x_train[valid], batch_size = 2*TRAINING_PARAMS.batch_size, verbose = 1)
         pd.DataFrame(oof_predictions).to_csv('temporary_oof_preds/temp_oof_preds_'+FILENAME+'.csv',index=False)
 
         print('Generating test predictions from the best model...')
-        preds_ = model.predict(x_test, batch_size = 2*TRAINING_PARAMS['batch_size'], verbose = 1)
+        preds_ = model.predict(x_test, batch_size = 2*TRAINING_PARAMS.batch_size, verbose = 1)
         cv_predictions.append(preds_)
         pd.DataFrame(preds_).to_csv('temporary_cv_preds/preds-{}.fold-{:d}.csv'.format(FILENAME,i+1), index = False)
         print('\n')
@@ -156,10 +126,10 @@ if run_kfold:
 
     """Compute n-folds average test predictions"""
     print('Saving predictions...')
-    preds = average_predictions(cv_predictions, n_folds)
+    preds = average_predictions(cv_predictions, TRAINING_PARAMS.n_folds)
     create_submission(preds, '{}_cv_{}.csv'.format(MODEL_TYPE, FILENAME))
 
     #"""Geometric mean"""
     #print('Geometric')
-    #preds2 = geom_average_predictions(cv_predictions, n_folds)
+    #preds2 = geom_average_predictions(cv_predictions, TRAINING_PARAMS.n_folds)
     #create_submission(preds2, '{}_cvgeom_{}.csv'.format(MODEL_TYPE, FILENAME))

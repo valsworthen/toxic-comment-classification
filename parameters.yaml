@@ -1,0 +1,40 @@
+FILENAME:
+MODEL_TYPE:
+#should be one the models implemented in models.py
+
+preprocessing_parameters:
+  embedding_file: 'sample'
+  embedding_dimension: 300
+  #whether to use the data preprocessed by Zafar: https://www.kaggle.com/fizzbuzz/cleaned-toxic-comments
+  use_preprocessed_data: True
+
+  max_nb_words: 50000
+  max_sequence_length: 200
+
+#parameters used in model fitting
+training_parameters:
+  run_90p: True #fit model on 90% of the data
+  run_kfold: False #perform kfold cross validation
+  n_folds: 10
+
+  batch_size: 128
+  nb_epochs: 50
+  patience: 1
+  min_delta: 0
+  monitored_value: 'val_loss'
+  weight_decay: 1e-4
+
+#parameters to create the Keras model
+model_parameters:
+  optimizer: 'nadam'
+  lr: 0.002
+  decay: 0.004
+  gru_units: 100
+  num_filters: 64
+  ngram_range: !!python/tuple [2,5]
+  use_attention: 1
+  use_maxpool: 1
+  use_avgpool: 1
+  use_dense: 0
+  dense_size: 50
+  dr: 0.2

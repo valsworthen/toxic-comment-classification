@@ -21,6 +21,10 @@ When run, this file asks for a **model type**. This corresponds to models implem
 
 Feel free to complete `models.py` with your own architecture!  
 
+##Models  
+
+TBD: list the different models I used during the competitions
+
 ## Embeddings  
 
 Word embeddings are used in NLP to compute *vector representation* of words that can be fed to machine learning models. Such representations can be extracted from statistics of the corpus but it is now common to *learn* them via a "fake task". You can check [this great explanation of Word2Vec](http://mccormickml.com/2016/04/19/word2vec-tutorial-the-skip-gram-model/), one of the most famous algorithm to learn word embeddings.  

@@ -6,10 +6,11 @@ import numpy as np
 import pandas as pd
 
 class Preprocessor():
-    def __init__(self, train, test, TEXT_COLUMN, MAX_NB_WORDS, MAX_SEQUENCE_LENGTH):
+    def __init__(self, train, test, TEXT_COLUMN, PREPROCESSING_PARAMS):
         self.TEXT_COLUMN = TEXT_COLUMN
-        self.MAX_NB_WORDS = MAX_NB_WORDS
-        self.MAX_SEQUENCE_LENGTH = MAX_SEQUENCE_LENGTH
+        self.max_nb_words = PREPROCESSING_PARAMS.max_nb_words
+        self.max_sequence_length = PREPROCESSING_PARAMS.max_sequence_length
+        self.embedding_dimension = PREPROCESSING_PARAMS.embedding_dimension
 
     def fill_null(self, train, test, pattern='no comment'):
         train[self.TEXT_COLUMN] = train[self.TEXT_COLUMN].fillna(pattern)
@@ -17,7 +18,7 @@ class Preprocessor():
         return train, test
 
     def set_tokenizer(self, train, test, fit_on_train_only=False):
-        tokenizer = Tokenizer(num_words=self.MAX_NB_WORDS, char_level=False, lower = True)
+        tokenizer = Tokenizer(num_words=self.max_nb_words, char_level=False, lower = True)
         if fit_on_train_only:
             tokenizer.fit_on_texts(train[self.TEXT_COLUMN].tolist())
         else:
@@ -28,32 +29,32 @@ class Preprocessor():
         sequences_train = self.tokenizer.texts_to_sequences(train[self.TEXT_COLUMN])
         sequences_test = self.tokenizer.texts_to_sequences(test[self.TEXT_COLUMN])
 
-        x_train = pad_sequences(sequences_train, maxlen=self.MAX_SEQUENCE_LENGTH)
-        x_test = pad_sequences(sequences_test, maxlen=self.MAX_SEQUENCE_LENGTH)
+        x_train = pad_sequences(sequences_train, maxlen=self.max_sequence_length)
+        x_test = pad_sequences(sequences_test, maxlen=self.max_sequence_length)
         return x_train, x_test
 
-    def make_words_vec(self, EMBEDDING_FILE, EMBEDDING_DIMENSION=300):
+    def make_words_vec(self, EMBEDDING_FILE):
         def get_coefs(word,*arr): return word, np.asarray(arr, dtype='float32')
         """compute word vectors for our corpus"""
         embedding_index = dict(get_coefs(*o.strip().split(" ")) for o in tqdm(open(EMBEDDING_FILE)))
 
         word_index = self.tokenizer.word_index
-        nb_words = min(self.MAX_NB_WORDS, len(word_index))
-        embedding_matrix = np.zeros((nb_words, EMBEDDING_DIMENSION))
+        nb_words = min(self.max_nb_words, len(word_index))
+        embedding_matrix = np.zeros((nb_words, self.embedding_dimension))
         for word, i in word_index.items():
-            if i >= self.MAX_NB_WORDS: continue
+            if i >= self.max_nb_words: continue
             embedding_vector = embedding_index.get(word)
             if embedding_vector is not None: embedding_matrix[i] = embedding_vector
         return embedding_matrix
 
-def load_data(EMBEDDING_FILE, use_preprocessed):
+def load_data(PREPROCESSING_PARAMS):
     #data preprocessed by Zafar
     #https://www.kaggle.com/fizzbuzz/cleaned-toxic-comments
-    if use_preprocessed:
+    if PREPROCESSING_PARAMS.use_preprocessed_data:
         df = pd.read_csv('input/train_preprocessed.csv')
         df_test = pd.read_csv('input/test_preprocessed.csv')
     #data preprocessed for Twitter embeddings
-    if 'twitter' in EMBEDDING_FILE:
+    if 'twitter' in PREPROCESSING_PARAMS.embedding_file:
         print('Loading twitter dataframe')
         df = pd.read_csv('input/train_twitter.csv')
         df_test = pd.read_csv('input/test_twitter.csv')
