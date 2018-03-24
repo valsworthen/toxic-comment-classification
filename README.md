@@ -9,9 +9,9 @@ There are 5 different architectures, find out more [below](#models).
 # How to run  
 ## Requirements
 Make sure you have Tensorflow **1.5** installed on GPU.  
-Run: `pip install scikit-learn keras`
+Run: `pip install scikit-learn keras tqdm`
 
-Input data should be inside `input/` folder and can be downloaded [here](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge/data)  
+Input data should be inside `input/` folder and can be downloaded [here](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge/data). I've only put sample files inside `input/` so that I can push the folder and perform tests.  
 
 This solution uses pre-trained embeddings so you should download a *pre-trained vectors* file ([see below](#embeddings) if you're not familiar with pre-trained embeddings)    
 
@@ -19,13 +19,14 @@ The script saves predictions & models after each fold and OOF predictions to do 
 
 ## Instructions  
 ### Quick run   
+tl;dr `python3 train_nn.py`
 
 The *main* file is `train_nn.py` and can be run directly via command line specifying the path to your embedding file.  
 
-For instance: `python3 train_nn.py crawl-300d-2M.vec`  
+For instance: `python3 train_nn.py crawl-300d-2M.vec` (you can also run it without argument, and it will use a sample of fastText vectors!)  
 
-This command reads parameters from `parameters.yaml`.  
-In particulier `MODEL_TYPE` picks one model that will be trained from `models.py`. Therefore you should modify `models.py` when you want to try a new architecture.
+Running `train_nn.py` reads parameters from `parameters.yaml`:  
+In particulier `MODEL_TYPE` picks from `models.py` one model that will be trained. Therefore you should modify `models.py` whenever you want to try a new architecture.
 See next part to know how to run the models I tried during the competition with fine-tuned parameters!   
 
 ### Run with best configs  
@@ -45,16 +46,16 @@ For instance: `python3 train_nn.py crawl-300d-2M.vec --model bibigru`
 I mostly tried GRU and CNN models during the competition. Almost every models starts with a non-trainable embedding layer followed by SpatialDropout and ends with a 6-dimensional Dense sigmoid layer so I won't mention it later.  
 
 #### BiBiGRU
-This model was inspired by Deepmoji. It scored 0.9853 in Public LB.
+This model was inspired by [Deepmoji](https://github.com/bfelbo/DeepMoji). It scored 0.9853 in Public LB.
 It consists in two successive Bidirectional GRU layers, whose outputs are then concatenated with the output of the SpatialDropout layer (so this is almost the original representation of the commentary).  
 Next layer is Attention (could be Max/Average pooling) followed by a 50-Dense layer.  
 
 #### PooledGRU  
-This is a simpler GRU model which was proposed in Kaggle Kernel. It scored 0.9859 in Public LB.  
+This is a simpler GRU model which was proposed in [Kaggle Kernel by Vladimir Demidov](https://www.kaggle.com/yekenot/pooled-gru-fasttext). It scored 0.9859 in Public LB.  
 There is only one GRU layer followed by Average and Max pooling. The outputs of the GRU, Max pooling and Average pooling are then concatenated.  
 
 #### N-gram CNN
-This model was inspired by a discussion about the performance of CNNs compared to RNNs. It scored 0,9849 in Public LB.  
+This model was inspired by [a discussion](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge/discussion/50501) about the performance of CNNs compared to RNNs. It scored 0,9849 in Public LB.  
 The objective of the architecture is to capture bigrams, trigrams, etc. inside the commentaries. Therefore, several conv layers with **different kernel sizes** are *simultaneously* trained on the ouput of the SpatialDropout layer. All the conv layers are followed by Attention/MaxPooling/AveragePooling and then concatenated before being fed to an optional 50-Dense layer.  
 
 #### CNN GRU  

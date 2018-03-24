@@ -1,3 +1,10 @@
+"""
+This implementation of Attention layer was taken from the Deepmoji project:
+https://github.com/bfelbo/DeepMoji. All credits go to the authors.
+
+Copyright (c) 2017 Bjarke Felbo, Han Thi Nguyen
+"""
+
 from keras import initializers
 from keras.engine import InputSpec, Layer
 from keras import backend as K

@@ -17,9 +17,11 @@ SEED = 2610
 np.random.seed(SEED)
 labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
 
-parser = argparse.ArgumentParser(description="Recurrent neural network for identifying and classifying toxic online comments")
-parser.add_argument("embedding_file")
-parser.add_argument("--model", default=None)
+parser = argparse.ArgumentParser(description="Recurrent neural network for \
+                        identifying and classifying toxic online comments")
+parser.add_argument("embedding_file", nargs='?', default='input/sample_fasttext.vec',
+                        help='Pre-trained embedding file path')
+parser.add_argument("-m", "--model", default=None, help='Type of architecture to be trained')
 
 args = parser.parse_args()
 

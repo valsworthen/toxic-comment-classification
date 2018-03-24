@@ -6,36 +6,36 @@ import numpy as np
 import pandas as pd
 
 class Preprocessor():
-    def __init__(self, TEXT_COLUMN, PREPROCESSING_PARAMS):
-        self.TEXT_COLUMN = TEXT_COLUMN
-        self.max_nb_words = PREPROCESSING_PARAMS.max_nb_words
-        self.max_sequence_length = PREPROCESSING_PARAMS.max_sequence_length
+    def __init__(self, text_column, preprocessing_params):
+        self.text_column = text_column
+        self.max_nb_words = preprocessing_params.max_nb_words
+        self.max_sequence_length = preprocessing_params.max_sequence_length
 
     def fill_null(self, train, test, pattern='no comment'):
-        train[self.TEXT_COLUMN] = train[self.TEXT_COLUMN].fillna(pattern)
-        test[self.TEXT_COLUMN] = test[self.TEXT_COLUMN].fillna(pattern)
+        train[self.text_column] = train[self.text_column].fillna(pattern)
+        test[self.text_column] = test[self.text_column].fillna(pattern)
         return train, test
 
     def set_tokenizer(self, train, test, fit_on_train_only=False):
         tokenizer = Tokenizer(num_words=self.max_nb_words, char_level=False, lower = True)
         if fit_on_train_only:
-            tokenizer.fit_on_texts(train[self.TEXT_COLUMN].tolist())
+            tokenizer.fit_on_texts(train[self.text_column].tolist())
         else:
-            tokenizer.fit_on_texts(train[self.TEXT_COLUMN].tolist() + test[self.TEXT_COLUMN].tolist())
+            tokenizer.fit_on_texts(train[self.text_column].tolist() + test[self.text_column].tolist())
         self.tokenizer = tokenizer
 
     def tokenize_and_pad(self, train, test):
-        sequences_train = self.tokenizer.texts_to_sequences(train[self.TEXT_COLUMN])
-        sequences_test = self.tokenizer.texts_to_sequences(test[self.TEXT_COLUMN])
+        sequences_train = self.tokenizer.texts_to_sequences(train[self.text_column])
+        sequences_test = self.tokenizer.texts_to_sequences(test[self.text_column])
 
         x_train = pad_sequences(sequences_train, maxlen=self.max_sequence_length)
         x_test = pad_sequences(sequences_test, maxlen=self.max_sequence_length)
         return x_train, x_test
 
-    def make_words_vec(self, EMBEDDING_FILE):
+    def make_words_vec(self, embedding_file):
         def get_coefs(word,*arr): return word, np.asarray(arr, dtype='float32')
         """compute word vectors for our corpus"""
-        embedding_index = dict(get_coefs(*o.strip().split(" ")) for o in tqdm(open(EMBEDDING_FILE)))
+        embedding_index = dict(get_coefs(*o.strip().split(" ")) for o in tqdm(open(embedding_file)))
 
         embedding_dimension = len(next (iter (embedding_index.values())))
 
@@ -49,10 +49,10 @@ class Preprocessor():
                 embedding_matrix[i] = embedding_vector
         return embedding_matrix, embedding_dimension
 
-def load_data(PREPROCESSING_PARAMS, embedding_file):
+def load_data(preprocessing_params, embedding_file):
     #data preprocessed by Zafar
     #https://www.kaggle.com/fizzbuzz/cleaned-toxic-comments
-    if PREPROCESSING_PARAMS.use_preprocessed_data:
+    if preprocessing_params.use_preprocessed_data:
         df = pd.read_csv('input/train_preprocessed.csv')
         df_test = pd.read_csv('input/test_preprocessed.csv')
     #data preprocessed for Twitter embeddings
