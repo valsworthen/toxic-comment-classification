@@ -33,7 +33,7 @@ model_parameters:
   gru_units: 100
 
   num_filters: 64
-  ngram_range: !!python/tuple [2,5]
+  ngram_range: !!python/tuple [2, 5] #range of kernel sizes to be used in convolutional blocks
 
   use_attention: 1
   use_maxpool: 0

@@ -106,7 +106,9 @@ class ModelBuilder():
 
         #for each k-gram we create a conv block. All the blocks will be concatenated
         conv_blocks = self.build_conv_blocks(conc)
-        x = concatenate(conv_blocks)
+        if len(conv_blocks) > 1:
+            x = concatenate(conv_blocks)
+        else: x = conv_blocks[0]
 
         if self.use_dense:
             x = BatchNormalization()(x)
@@ -166,7 +168,9 @@ class ModelBuilder():
 
         #for each k-gram we create a conv block. All the blocks will be concatenated
         conv_blocks = self.build_conv_blocks(x)
-        x = concatenate(conv_blocks)
+        if len(conv_blocks) > 1:
+            x = concatenate(conv_blocks)
+        else: x = conv_blocks[0]
 
         if self.use_dense:
             x = BatchNormalization()(x)

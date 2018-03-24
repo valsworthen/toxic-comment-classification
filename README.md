@@ -55,7 +55,7 @@ There is only one GRU layer followed by Average and Max pooling. The outputs of 
 
 #### N-gram CNN
 This model was inspired by a discussion about the performance of CNNs compared to RNNs. It scored 0,9849 in Public LB.  
-The objective of the architecture is to capture bigrams, trigrams, etc. inside the commentaries. Therefore, several conv layers with **different kerle size** are *simultaneously* trained on the ouput of the SpatialDropout layer. All the conv layers are followed by Attention/MaxPooling/AveragePooling and then concatenated before being fed to an optional 50-Dense layer.  
+The objective of the architecture is to capture bigrams, trigrams, etc. inside the commentaries. Therefore, several conv layers with **different kernel sizes** are *simultaneously* trained on the ouput of the SpatialDropout layer. All the conv layers are followed by Attention/MaxPooling/AveragePooling and then concatenated before being fed to an optional 50-Dense layer.  
 
 #### CNN GRU  
 This model scored 0.9861 in Public LB.  
