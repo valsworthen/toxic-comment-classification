@@ -1,15 +1,13 @@
 #this model scored 0.9853 in Public LB
 
-FILENAME:
+FILENAME: best_bibigru
 MODEL_TYPE: bibigru
-#should be one of the models implemented in models.py
+
 run_90p: False #fit model on 90% of the data
 run_kfold: True #perform kfold cross validation
 n_folds: 10
 
 preprocessing_parameters:
-  embedding_file: 'fasttext'
-  embedding_dimension: 300
   #whether to use the data preprocessed by Zafar: https://www.kaggle.com/fizzbuzz/cleaned-toxic-comments
   use_preprocessed_data: True
 

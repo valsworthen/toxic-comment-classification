@@ -9,6 +9,7 @@ import time
 from models import instantiate_model
 import preprocessing
 import running
+import argparse
 
 import sys
 
@@ -16,17 +17,26 @@ SEED = 2610
 np.random.seed(SEED)
 labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
 
+parser = argparse.ArgumentParser(description="Recurrent neural network for identifying and classifying toxic online comments")
+parser.add_argument("embedding_file")
+parser.add_argument("--model", default=None)
+
+args = parser.parse_args()
+
 print('Parsing parameters')
-if len(sys.argv) > 1:
-    model_name = sys.argv[1]
+embedding_file = args.embedding_file
+
+if args.model:
+    model_name = args.model
     try:
         config = read_yaml('best_configs/{}.yaml'.format(model_name))
-        print('Best parameters for {} loaded'.format(model_name))
+        print('Best parameters for {} loaded!'.format(model_name))
     except FileNotFoundError:
         print('Wrong model type!')
         sys.exit(1)
 else:
     config = read_yaml('parameters.yaml')
+    print('Custom parameters loaded!')
 
 FILENAME = config.FILENAME
 MODEL_TYPE = config.MODEL_TYPE
@@ -36,21 +46,13 @@ PREPROCESSING_PARAMS = config.preprocessing_parameters
 
 max_sequence_length = PREPROCESSING_PARAMS.max_sequence_length
 max_nb_words = PREPROCESSING_PARAMS.max_nb_words
-embedding_dimension = PREPROCESSING_PARAMS.embedding_dimension
 
 print('Loading and preprocessing data')
-df, df_test = preprocessing.load_data(PREPROCESSING_PARAMS)
-"""This should be replaced with your path to embedding files"""
-embeddings = {
-                'twitter':'/home/valentin/glove.twitter.27B.200d.txt',
-                'fasttext':'/home/valentin/crawl-300d-2M.vec',
-                'glove':'/home/valentin/glove.840B.300d.txt',
-                'sample':'/home/valentin/sample_fasttext.vec'
-            }
-embedding_file = embeddings[PREPROCESSING_PARAMS.embedding_file]
+df, df_test = preprocessing.load_data(PREPROCESSING_PARAMS, embedding_file)
 
 """Classic NLP preprocessing for Keras"""
-pp = preprocessing.Preprocessor(df, df_test, 'comment_text', PREPROCESSING_PARAMS)
+pp = preprocessing.Preprocessor('comment_text', PREPROCESSING_PARAMS)
+
 df, df_test = pp.fill_null(df, df_test)
 y_train = df[labels].values
 
@@ -62,9 +64,10 @@ print('Shape of test tensor ', x_test.shape)
 #Pre-trained embeddings
 print('Creating embedding matrix...')
 begin_matrix = time.time()
-embedding_matrix = pp.make_words_vec(embedding_file)
+embedding_matrix, embedding_dimension = pp.make_words_vec(embedding_file)
 end_matrix = format_time(time.time() - begin_matrix)
 print('Matrix created - shape: {} - time: {}'.format(embedding_matrix.shape, end_matrix))
+print(embedding_dimension)
 
 """Fit on 90% of the dataset"""
 if config.run_90p:
@@ -74,7 +77,8 @@ if config.run_90p:
     print(model.summary())
 
     X_train, X_valid, Y_train, Y_valid = train_test_split(x_train, y_train, test_size = 0.1, random_state = SEED)
-    filepath = 'temporary_cv_models/model-{}-autocheckpoint.h5'.format(FILENAME)
+    #filepath = 'temporary_cv_models/model-{}-autocheckpoint.h5'.format(FILENAME)
+    filepath = 'model-{}-autocheckpoint.h5'.format(FILENAME)
     print('Fitting model on 90% of the data...')
     hist, stopped_epoch = running.fitting_model(model, X_train, Y_train, X_valid, Y_valid, TRAINING_PARAMS, filepath)
     end_cv = format_time(time.time() - begin_cv)
@@ -102,7 +106,8 @@ if config.run_kfold:
     for i, (train, valid) in enumerate(kf.split(x_train)):
         begin_fold = time.time()
         model = instantiate_model(MODEL_TYPE, MODEL_PARAMS, max_sequence_length, max_nb_words, embedding_dimension, embedding_matrix)
-        filepath = 'temporary_cv_models/model-{}.fold-{:d}-autocheckpoint.h5'.format(FILENAME, i+1)
+        #filepath = 'temporary_cv_models/model-{}.fold-{:d}-autocheckpoint.h5'.format(FILENAME, i+1)
+        filepath = 'model-{}.fold-{:d}-autocheckpoint.h5'.format(FILENAME, i+1)
         if i == 0:
             print(model.summary())
         print('Starting fold {:d}...'.format(i+1))
@@ -118,18 +123,20 @@ if config.run_kfold:
         model.load_weights(filepath)
         print('Saving OOF predictions...')
         oof_predictions[valid, :] = model.predict(x_train[valid], batch_size = 2*TRAINING_PARAMS.batch_size, verbose = 1)
-        pd.DataFrame(oof_predictions).to_csv('temporary_oof_preds/temp_oof_preds_'+FILENAME+'.csv',index=False)
+        #pd.DataFrame(oof_predictions).to_csv('temporary_oof_preds/temp_oof_preds_'+FILENAME+'.csv',index=False)
+        pd.DataFrame(oof_predictions).to_csv('temp_oof_preds_'+FILENAME+'.csv',index=False)
 
         print('Generating test predictions from the best model...')
         preds_ = model.predict(x_test, batch_size = 2*TRAINING_PARAMS.batch_size, verbose = 1)
         cv_predictions.append(preds_)
-        pd.DataFrame(preds_).to_csv('temporary_cv_preds/preds-{}.fold-{:d}.csv'.format(FILENAME,i+1), index = False)
+        #pd.DataFrame(preds_).to_csv('temporary_cv_preds/preds-{}.fold-{:d}.csv'.format(FILENAME,i+1), index = False)
+        pd.DataFrame(preds_).to_csv('preds-{}.fold-{:d}.csv'.format(FILENAME,i+1), index = False)
         print('\n')
         del model
 
     end_cv = format_time(time.time() - begin_cv)
-    pd.DataFrame(oof_predictions).to_csv('oof_predictions/oof_pred_'+FILENAME+'.csv', index = False)
-
+    #pd.DataFrame(oof_predictions).to_csv('oof_predictions/oof_pred_'+FILENAME+'.csv', index = False)
+    pd.DataFrame(oof_predictions).to_csv('oof_pred_'+FILENAME+'.csv', index = False)
     oof_auc = roc_auc_score(y_train, oof_predictions)
 
     print('--- Results : {}\nAverage AUC {:.5f} +/- {:.4f} -- time: {}'.format(FILENAME, np.mean(cv_scores), np.std(cv_scores), end_cv))

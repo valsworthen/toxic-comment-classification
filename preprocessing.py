@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 class Preprocessor():
-    def __init__(self, train, test, TEXT_COLUMN, PREPROCESSING_PARAMS):
+    def __init__(self, TEXT_COLUMN, PREPROCESSING_PARAMS):
         self.TEXT_COLUMN = TEXT_COLUMN
         self.max_nb_words = PREPROCESSING_PARAMS.max_nb_words
         self.max_sequence_length = PREPROCESSING_PARAMS.max_sequence_length
@@ -38,23 +38,26 @@ class Preprocessor():
         """compute word vectors for our corpus"""
         embedding_index = dict(get_coefs(*o.strip().split(" ")) for o in tqdm(open(EMBEDDING_FILE)))
 
+        embedding_dimension = len(next (iter (embedding_index.values())))
+
         word_index = self.tokenizer.word_index
         nb_words = min(self.max_nb_words, len(word_index))
-        embedding_matrix = np.zeros((nb_words, self.embedding_dimension))
+        embedding_matrix = np.zeros((nb_words, embedding_dimension))
         for word, i in word_index.items():
             if i >= self.max_nb_words: continue
             embedding_vector = embedding_index.get(word)
-            if embedding_vector is not None: embedding_matrix[i] = embedding_vector
-        return embedding_matrix
+            if embedding_vector is not None:
+                embedding_matrix[i] = embedding_vector
+        return embedding_matrix, embedding_dimension
 
-def load_data(PREPROCESSING_PARAMS):
+def load_data(PREPROCESSING_PARAMS, embedding_file):
     #data preprocessed by Zafar
     #https://www.kaggle.com/fizzbuzz/cleaned-toxic-comments
     if PREPROCESSING_PARAMS.use_preprocessed_data:
         df = pd.read_csv('input/train_preprocessed.csv')
         df_test = pd.read_csv('input/test_preprocessed.csv')
     #data preprocessed for Twitter embeddings
-    if 'twitter' in PREPROCESSING_PARAMS.embedding_file:
+    if 'twitter' in embedding_file:
         print('Loading twitter dataframe')
         df = pd.read_csv('input/train_twitter.csv')
         df_test = pd.read_csv('input/test_twitter.csv')

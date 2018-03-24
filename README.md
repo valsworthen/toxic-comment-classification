@@ -1,37 +1,42 @@
+# Toxic Comment Classification  
+
+This repo contains code for the [Kaggle Competition: Toxic Comment Classification Challenge](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge)  
+
+Currently it can be used to train different architectures I tried during the challenge. The best one (gru_cnn) achieves **AUC 0.9863** on Public leaderboard, and 0.9856 on Private Leaderboard.  
+
+There are 5 different architectures, find out more [below](#models).  
+
 # How to run  
 ## Requirements
-Make sure you have Tensorflow **1.5** installed on GPU.  
+Make sure you have Tensorflow **1.5** installed on GPU.
 
-The script saves a lot of files (OOF, predictions, models) in the following folders:  
-- `temporary_cv_models/`  
-- `temporary_cv_preds/`  
-- `temporary_oof_preds/`  
+Input data should be inside `input/` folder and can be downloaded [here](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge/data)  
 
-Input data should be inside `input/` folder.  
+This solution uses pre-trained embeddings so you should download a *pre-trained vectors* file ([see below](#embeddings) if you're not familiar with pre-trained embeddings)    
 
-**Make sure to replace the** `embedding` **dictionnary in**`train_nn.py` **with your paths to pre-trained embeddings** ([see below](#embeddings) if you're not familiar with pre-trained embeddings)  
+The script saves predictions & models after each fold and OOF predictions to do stacking.  
 
 ## Instructions  
+### Quick run   
+
+The *main* file is `train_nn.py` and can be run directly via command line specifying the path to your embedding file.  
+
+For instance: `python3 train_nn.py crawl-300d-2M.vec`  
+
+It is possible either to fit the model on 90% of the dataset or to perform K-fold cross validation.  
+
+At the moment, `models.py` only contains the architectures mentioned below. Feel free to complete it with your own models!    
+
 ### Run with best configs  
 
-Simply run `python3 train_nn.py` + `model_name` from one of the following:  
+Simply run `python3 train_nn.py crawl-300d-2M.vec --model model_name` where `model_name` is one of the following:  
 - bibigru  
 - pooled_gru  
 - ngram_cnn  
 - cnn_gru  
 - gru_cnn  
 
-For instance: `python3 train_nn.py bibigru`
-
-### Run with custom configs  
-
-The *main* file is `train_nn.py` and can be run directly via command line after having specified the parameters in `parameters.yaml`.  
-
-Command: `python3 train_nn.py`  
-
-It is possible either to fit the model on 90% of the dataset or to perform K-fold cross validation.  
-
-At the moment, `models.py` only contains the architectures mentioned above. Feel free to complete it with your own models!    
+For instance: `python3 train_nn.py crawl-300d-2M.vec --model bibigru`
 
 # Appendix
 ## Models  
