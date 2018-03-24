@@ -1,5 +1,5 @@
 import numpy as np
-from tensorflow.python.keras.callbacks import Callback
+from keras.callbacks import Callback
 from sklearn.metrics import roc_auc_score
 
 class RocAucEvaluation(Callback):

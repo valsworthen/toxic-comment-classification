@@ -1,15 +1,11 @@
 from keras import optimizers
-from keras.models import Model
-from keras.layers import Input, Bidirectional, Dense,Dropout,\
-                                            Embedding, Conv1D, MaxPooling1D, \
-                                            Dropout, Flatten,  \
-                                            BatchNormalization
+from keras.models import Model, Input
+from keras.layers import Embedding, Dense
 from keras.layers import GlobalMaxPooling1D, GlobalAveragePooling1D, concatenate
-from keras.layers import CuDNNLSTM, CuDNNGRU
-from keras.layers import SpatialDropout1D, PReLU
+from keras.layers import CuDNNLSTM, CuDNNGRU, Bidirectional
+from keras.layers import SpatialDropout1D, PReLU, BatchNormalization, Dropout
+from keras.layers import Conv1D, Conv2D
 from attlayer import AttentionWeightedAverage
-from keras.layers import Conv2D
-
 
 def instantiate_model(model_type, MODEL_PARAMS, *args):
     """

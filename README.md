@@ -9,6 +9,7 @@ There are 5 different architectures, find out more [below](#models).
 # How to run  
 ## Requirements
 Make sure you have Tensorflow **1.5** installed on GPU.
+Run: `pip install scikit-learn keras`
 
 Input data should be inside `input/` folder and can be downloaded [here](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge/data)  
 
@@ -23,9 +24,9 @@ The *main* file is `train_nn.py` and can be run directly via command line specif
 
 For instance: `python3 train_nn.py crawl-300d-2M.vec`  
 
-It is possible either to fit the model on 90% of the dataset or to perform K-fold cross validation.  
-
-At the moment, `models.py` only contains the architectures mentioned below. Feel free to complete it with your own models!    
+This command reads parameters from `parameters.yaml`.  
+In particulier `MODEL_TYPE` picks one model that will be trained from `models.py`. Therefore you should modify `models.py` when you want to try a new architecture.
+See next part to know how to run the models I tried during the competition with fine-tuned parameters!   
 
 ### Run with best configs  
 

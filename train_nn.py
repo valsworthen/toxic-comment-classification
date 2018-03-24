@@ -2,16 +2,17 @@ import pandas as pd
 import numpy as np
 from keras.models import load_model
 from sklearn.metrics import roc_auc_score, log_loss
+from sklearn.model_selection import KFold, train_test_split
+
 from utils import format_time, create_submission, average_predictions, \
         geom_average_predictions, read_yaml
-from sklearn.model_selection import KFold, train_test_split
-import time
 from models import instantiate_model
 import preprocessing
 import running
-import argparse
 
+import argparse
 import sys
+import time
 
 SEED = 2610
 np.random.seed(SEED)
