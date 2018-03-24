@@ -8,7 +8,7 @@ There are 5 different architectures, find out more [below](#models).
 
 # How to run  
 ## Requirements
-Make sure you have Tensorflow **1.5** installed on GPU.
+Make sure you have Tensorflow **1.5** installed on GPU.  
 Run: `pip install scikit-learn keras`
 
 Input data should be inside `input/` folder and can be downloaded [here](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge/data)  
@@ -33,9 +33,9 @@ See next part to know how to run the models I tried during the competition with 
 Simply run `python3 train_nn.py crawl-300d-2M.vec --model model_name` where `model_name` is one of the following:  
 - [bibigru](#bibigru)  
 - [pooled_gru](#pooledgru)  
-- [ngram_cnn](#n-gram cnn)  
-- [cnn_gru](#cnn gru)  
-- [gru_cnn](#gru cnn)  
+- [ngram_cnn](#n-gram-cnn)  
+- [cnn_gru](#cnn-gru)  
+- [gru_cnn](#gru-cnn)  
 
 For instance: `python3 train_nn.py crawl-300d-2M.vec --model bibigru`
 
