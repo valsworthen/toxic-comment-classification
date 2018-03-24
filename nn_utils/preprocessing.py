@@ -10,7 +10,6 @@ class Preprocessor():
         self.TEXT_COLUMN = TEXT_COLUMN
         self.max_nb_words = PREPROCESSING_PARAMS.max_nb_words
         self.max_sequence_length = PREPROCESSING_PARAMS.max_sequence_length
-        self.embedding_dimension = PREPROCESSING_PARAMS.embedding_dimension
 
     def fill_null(self, train, test, pattern='no comment'):
         train[self.TEXT_COLUMN] = train[self.TEXT_COLUMN].fillna(pattern)

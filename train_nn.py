@@ -4,11 +4,10 @@ from keras.models import load_model
 from sklearn.metrics import roc_auc_score, log_loss
 from sklearn.model_selection import KFold, train_test_split
 
-from utils import format_time, create_submission, average_predictions, \
+from tools.utils import format_time, create_submission, average_predictions, \
         geom_average_predictions, read_yaml
-from models import instantiate_model
-import preprocessing
-import running
+from nn_utils.models import instantiate_model
+from nn_utils import preprocessing, running
 
 import argparse
 import sys
@@ -68,8 +67,8 @@ begin_matrix = time.time()
 embedding_matrix, embedding_dimension = pp.make_words_vec(embedding_file)
 end_matrix = format_time(time.time() - begin_matrix)
 print('Matrix created - shape: {} - time: {}'.format(embedding_matrix.shape, end_matrix))
-print(embedding_dimension)
 
+print('\nStart training of {} model!'.format(MODEL_TYPE))
 """Fit on 90% of the dataset"""
 if config.run_90p:
 

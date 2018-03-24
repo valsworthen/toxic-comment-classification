@@ -1,4 +1,4 @@
-#this model scored 0.9849 in Public LB
+#this model scored 0.9859 in Public LB
 
 FILENAME: best_pooled_gru
 MODEL_TYPE: pooled_gru

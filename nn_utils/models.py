@@ -5,7 +5,7 @@ from keras.layers import GlobalMaxPooling1D, GlobalAveragePooling1D, concatenate
 from keras.layers import CuDNNLSTM, CuDNNGRU, Bidirectional
 from keras.layers import SpatialDropout1D, PReLU, BatchNormalization, Dropout
 from keras.layers import Conv1D, Conv2D
-from attlayer import AttentionWeightedAverage
+from nn_utils.attlayer import AttentionWeightedAverage
 
 def instantiate_model(model_type, MODEL_PARAMS, *args):
     """
@@ -68,8 +68,9 @@ class ModelBuilder():
             if self.use_avgpool:
                 kavg = GlobalAveragePooling1D(name=str(ks)+'gram_avgpool')(kgram)
                 kgram_layers.append(kavg)
-
-            kgram = concatenate(kgram_layers, name = str(ks)+'gram_concat')
+            if len(kgram_layers) > 1:
+                kgram = concatenate(kgram_layers, name = str(ks)+'gram_concat')
+            else: kgram = kgram_layers[0]
             conv_blocks.append(kgram)
         return conv_blocks
 
