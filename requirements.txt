@@ -1,0 +1,7 @@
+tensorflow >= 1.4.0
+keras
+scipy
+numpy
+scikit-learn
+tqdm
+pandas
